@@ -1,53 +1,195 @@
-// 생년월일 운세 기능의 기존 로직을 불러온 뒤 최종 레이아웃을 적용합니다.
+// MIRA 생년월일 운세 UI
+// 기존 페이지의 운세 영역을 PC/모바일 모두 같은 구조로 정리합니다.
 (function(){
-  const legacy='https://raw.githubusercontent.com/kjh9410065-art/mira/700b090bcbba4da8200cfb8c9a9e038024d09e8b/assets/zodiac-links.js';
-  const script=document.createElement('script');
-  script.src=legacy;
-  script.onload=()=>{
-    const apply=()=>{
-      const form=document.getElementById('birthForm');
-      const result=document.getElementById('birthResult');
-      const trigger=form&&form.querySelector('.birth-date-trigger');
-      const reset=form&&form.querySelector('.birth-reset');
-      if(!form||!result||!trigger||!reset){setTimeout(apply,100);return;}
+  const animals=['쥐','소','호랑이','토끼','용','뱀','말','양','원숭이','닭','개','돼지'];
+  const chars=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+  const today=new Date();
 
-      // 결과/경고 문구를 생년월일 입력창 바로 왼쪽으로 이동합니다.
-      form.insertBefore(result,trigger);
+  function waitForForm(){
+    const form=document.getElementById('birthForm');
+    if(!form){setTimeout(waitForForm,100);return;}
+    setup(form);
+  }
 
-      const style=document.createElement('style');
-      style.textContent=`
-        /* 입력창과 버튼을 하나의 고정 슬롯으로 만들어 경고문 때문에 밀리지 않게 합니다. */
-        .birth-box{position:relative!important;overflow:visible!important;}
-        .birth-form{position:absolute!important;left:10px!important;right:auto!important;top:50%!important;transform:translateY(-50%)!important;width:calc(100% - 20px)!important;min-width:0!important;height:48px!important;display:flex!important;align-items:center!important;flex-wrap:nowrap!important;gap:7px!important;margin:0!important;padding:0!important;box-sizing:border-box!important;}
-        .birth-form .birth-result{order:1!important;position:static!important;display:block!important;flex:0 0 78px!important;width:78px!important;min-width:78px!important;max-width:78px!important;margin:0!important;padding:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;text-align:left!important;font-size:11px!important;font-weight:800!important;color:#5c8d71!important;line-height:1.2!important;}
-        .birth-form .birth-date-trigger{order:2!important;flex:1 1 auto!important;width:auto!important;min-width:0!important;max-width:none!important;height:46px!important;}
-        .birth-form button[type="submit"]{order:3!important;flex:0 0 auto!important;white-space:nowrap!important;}
-        .birth-form .birth-reset{order:4!important;flex:0 0 auto!important;width:64px!important;min-width:64px!important;height:38px!important;white-space:nowrap!important;}
-        .birth-form .birth-result.birth-warning{position:static!important;display:block!important;flex:0 0 78px!important;width:78px!important;min-width:78px!important;max-width:78px!important;margin:0!important;color:#a15b4c!important;white-space:nowrap!important;overflow:visible!important;text-overflow:clip!important;text-align:left!important;pointer-events:none!important;}
-        @media(max-width:760px) and (hover:none) and (pointer:coarse){
-          .birth-box{min-height:76px!important;padding:14px!important;}
-          .birth-copy{display:none!important;}
-          .birth-form{left:10px!important;right:auto!important;width:calc(100% - 20px)!important;min-width:0!important;max-width:none!important;}
-        }
-      `;
-      document.head.appendChild(style);
+  function setup(form){
+    // 이미 새 UI가 적용된 경우 중복 실행하지 않습니다.
+    if(form.dataset.miraFixed==='1') return;
+    form.dataset.miraFixed='1';
 
-      // 기존 경고 함수가 결과 요소를 body로 옮겨도 다시 입력 폼의 왼쪽 슬롯으로 되돌립니다.
-      const observer=new MutationObserver(()=>{
-        const f=document.getElementById('birthForm');
-        const r=document.getElementById('birthResult');
-        const t=f&&f.querySelector('.birth-date-trigger');
-        if(!f||!r||!t)return;
-        if(r.classList.contains('birth-warning')){
-          f.insertBefore(r,t);
-          r.removeAttribute('style');
-        }
-      });
-      observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style']});
-    };
-    apply();
-  };
-  script.onerror=()=>console.error('Mira birth fortune script failed to load.');
-  document.head.appendChild(script);
+    let input=form.querySelector('input');
+    const submit=form.querySelector('button[type="submit"]') || form.querySelector('button');
+    let result=document.getElementById('birthResult');
+    let reset=form.querySelector('.birth-reset');
+
+    // 출생년도 입력을 정확한 생년월일 입력으로 바꿉니다.
+    if(input){
+      input.type='date';
+      input.removeAttribute('min');
+      input.max=today.toISOString().slice(0,10);
+      input.classList.add('mira-birth-date');
+      input.setAttribute('aria-label','생년월일');
+      input.setAttribute('title','생년월일을 선택하세요');
+    }
+
+    // 결과 문구와 초기화 버튼이 없으면 동적으로 생성합니다.
+    if(!result){
+      result=document.createElement('span');
+      result.id='birthResult';
+      result.className='birth-result';
+    }
+    if(!reset){
+      reset=document.createElement('button');
+      reset.type='button';
+      reset.className='birth-reset';
+      reset.textContent='초기화';
+    }
+
+    // 결과 → 생년월일 → 운세 확인 → 초기화 순서로 고정합니다.
+    form.insertBefore(result,input || submit || null);
+    if(submit && !reset.parentElement) form.appendChild(reset);
+    if(reset.parentElement!==form) form.appendChild(reset);
+
+    const style=document.createElement('style');
+    style.textContent=`
+      /* 생년월일 카드: 설명 영역과 입력 영역을 분리해 어떤 경고도 입력칸을 밀지 않게 합니다. */
+      .birth-box{position:relative!important;display:flex!important;align-items:center!important;min-height:72px!important;overflow:visible!important;}
+      .birth-copy{flex:1 1 auto!important;min-width:0!important;}
+      .birth-form{display:flex!important;align-items:center!important;flex-wrap:nowrap!important;gap:7px!important;flex:0 0 auto!important;width:auto!important;margin:0!important;padding:0!important;position:static!important;transform:none!important;}
+      .birth-form .birth-result{display:block!important;order:1!important;position:static!important;width:82px!important;min-width:82px!important;max-width:82px!important;margin:0!important;padding:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;text-align:left!important;font-size:11px!important;font-weight:900!important;line-height:1.25!important;color:#5c8d71!important;}
+      .birth-form .birth-date-trigger,.birth-form .mira-birth-date,.birth-form input{order:2!important;flex:0 0 190px!important;width:190px!important;min-width:190px!important;height:46px!important;box-sizing:border-box!important;border:1px solid #d3cdbf!important;border-radius:10px!important;background:#fffdf8!important;padding:0 11px!important;color:#244638!important;font-size:13px!important;outline:none!important;}
+      .birth-form button[type="submit"]{order:3!important;flex:0 0 auto!important;height:38px!important;white-space:nowrap!important;}
+      .birth-form .birth-reset{order:4!important;flex:0 0 64px!important;width:64px!important;min-width:64px!important;height:38px!important;border:1px solid #d3cdbf!important;border-radius:9px!important;background:#fffdf8!important;color:#587062!important;padding:0 10px!important;font-size:12px!important;font-weight:900!important;cursor:pointer!important;white-space:nowrap!important;}
+      .birth-form .birth-result.birth-warning{position:static!important;display:block!important;flex:0 0 82px!important;width:82px!important;min-width:82px!important;color:#a15b4c!important;overflow:visible!important;}
+      .birth-form .mira-birth-date:focus{border-color:#5c8d71!important;box-shadow:0 0 0 3px rgba(92,141,113,.12)!important;}
+
+      /* 운세를 입력하기 전에도 결과 카드의 크기는 그대로 유지합니다. */
+      .mira-pending .overview .card{visibility:hidden!important;}
+      .mira-pending .overview{min-height:208px!important;}
+
+      @media(max-width:760px) and (hover:none) and (pointer:coarse){
+        body{min-width:0!important;overflow-x:hidden!important;}
+        .wrap{width:calc(100% - 24px)!important;max-width:none!important;}
+        .page{margin-left:0!important;}
+        .header-in{padding:0!important;}
+        .hero-in{padding:18px 0!important;}
+        .hero h1{font-size:31px!important;letter-spacing:-2.4px!important;}
+        .hero-art{height:150px!important;margin-top:12px!important;}
+        .birth-box{display:block!important;padding:14px!important;min-height:76px!important;}
+        .birth-copy{display:none!important;}
+        .birth-form{width:100%!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;grid-template-rows:46px 38px!important;gap:7px!important;position:static!important;}
+        .birth-form .birth-result{grid-column:1 / -1!important;grid-row:1!important;display:block!important;width:auto!important;min-width:0!important;max-width:none!important;height:46px!important;line-height:46px!important;font-size:11px!important;}
+        .birth-form .birth-date-trigger,.birth-form .mira-birth-date,.birth-form input{grid-column:1!important;grid-row:2!important;width:100%!important;min-width:0!important;max-width:none!important;height:38px!important;}
+        .birth-form button[type="submit"]{grid-column:2!important;grid-row:2!important;height:38px!important;padding:0 13px!important;}
+        .birth-form .birth-reset{grid-column:2!important;grid-row:3!important;height:32px!important;min-height:32px!important;}
+        .birth-form:has(.birth-reset){grid-template-rows:46px 38px 32px!important;}
+        .overview{grid-template-columns:1fr!important;gap:8px!important;}
+        .overview .main{min-height:190px!important;}
+        .four{grid-template-columns:repeat(2,1fr)!important;gap:8px!important;}
+        .zodiac{grid-template-columns:repeat(2,1fr)!important;}
+        .test-grid{grid-template-columns:repeat(2,1fr)!important;}
+        .head h2{font-size:20px!important;}
+      }
+    `;
+    document.head.appendChild(style);
+
+    // 모바일에서는 한 줄에 억지로 4개를 넣지 않고, 결과 문구를 위에 고정합니다.
+    if(window.matchMedia('(max-width:760px)').matches){
+      reset.style.display='block';
+    }
+
+    const section=form.closest('.section') || form.parentElement;
+    const head=section && section.querySelector('.head h2');
+    if(head && head.textContent.includes('종합운')) head.textContent='오늘의 운세';
+
+    const overview=document.querySelector('.overview');
+    if(overview){
+      overview.classList.add('mira-pending');
+      const sectionWrap=overview.closest('.section');
+      if(sectionWrap) sectionWrap.classList.add('mira-pending');
+    }
+
+    function showResult(){
+      if(!input || !input.value){
+        result.textContent='생년월일을 먼저 입력해주세요.';
+        result.classList.add('birth-warning');
+        input && input.focus();
+        return false;
+      }
+      const parts=input.value.split('-').map(Number);
+      const year=parts[0],month=parts[1],day=parts[2];
+      if(!year||!month||!day) return false;
+      const animalIndex=((year-2020)%12+12)%12;
+      result.classList.remove('birth-warning');
+      result.textContent=year+'년생 · '+animals[animalIndex];
+      result.title=year+'년생 · '+animals[animalIndex];
+      if(overview){
+        overview.classList.remove('mira-pending');
+        const sectionWrap=overview.closest('.section');
+        if(sectionWrap) sectionWrap.classList.remove('mira-pending');
+        personalizeOverview(year,month,day,animalIndex);
+      }
+      try{localStorage.setItem('mira_birth_date',input.value);}catch(e){}
+      return true;
+    }
+
+    // 입력값을 선택했을 때 왼쪽 결과 문구만 갱신하고 운세 카드는 확인 버튼 전까지 비워 둡니다.
+    input && input.addEventListener('change',function(){
+      if(!input.value){result.textContent='';return;}
+      const y=Number(input.value.slice(0,4));
+      const idx=((y-2020)%12+12)%12;
+      result.classList.remove('birth-warning');
+      result.textContent=y+'년생 · '+animals[idx];
+    });
+
+    form.addEventListener('submit',function(e){
+      e.preventDefault();
+      showResult();
+    },true);
+
+    reset.addEventListener('click',function(){
+      input.value='';
+      result.textContent='';
+      result.classList.remove('birth-warning');
+      if(overview){
+        overview.classList.add('mira-pending');
+        const sectionWrap=overview.closest('.section');
+        if(sectionWrap) sectionWrap.classList.add('mira-pending');
+      }
+      try{localStorage.removeItem('mira_birth_date');}catch(e){}
+    });
+
+    // 저장된 생년월일은 입력창에만 복원합니다. 페이지를 열자마자 운세가 펼쳐지지는 않습니다.
+    try{
+      const saved=localStorage.getItem('mira_birth_date');
+      if(saved && input){
+        input.value=saved;
+        const y=Number(saved.slice(0,4));
+        const idx=((y-2020)%12+12)%12;
+        result.textContent=y+'년생 · '+animals[idx];
+      }
+    }catch(e){}
+  }
+
+  function personalizeOverview(year,month,day,index){
+    const seed=year*31+month*17+day*13+today.getDate()*7+today.getMonth()*11;
+    const score=76+(seed%20);
+    const grades=['좋은 흐름','안정적인 흐름','기회가 오는 흐름','차분한 흐름'];
+    const messages=[
+      ['작은 변화가 좋은 흐름을 만들어요.','눈앞의 일을 하나씩 정리하면 생각보다 수월하게 풀리는 날이에요.'],
+      ['천천히 움직일수록 결과가 좋아요.','서두르기보다 순서를 정하면 오늘의 운이 안정적으로 이어져요.'],
+      ['새로운 기회를 놓치지 마세요.','평소와 다른 선택 하나가 오늘의 분위기를 바꿔줄 수 있어요.'],
+      ['정리와 집중이 행운을 불러요.','해야 할 일을 가볍게 정리하면 마음도 한결 편안해져요.']
+    ];
+    const type=index%4;
+    const main=document.querySelector('.overview .main');
+    if(main){
+      const badge=main.querySelector('.badge'); if(badge) badge.textContent=grades[type];
+      const h=main.querySelector('h3'); if(h) h.textContent=messages[type][0];
+      const p=main.querySelector('p'); if(p) p.textContent=messages[type][1];
+      const sc=main.querySelector('.score b'); if(sc) sc.textContent=score;
+    }
+  }
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',waitForForm);
+  else waitForForm();
 })();
-\n\n// MIRA_BIRTH_FORM_FIXED_LAYOUT\n(function(){\n  // 생년월일 입력창과 버튼을 고정 슬롯으로 배치해 경고문이 레이아웃을 밀지 못하게 합니다.\n  const s=document.createElement('style');\n  s.textContent=`\n  .birth-box{position:relative!important;}\n  .birth-form{position:absolute!important;right:17px!important;top:50%!important;transform:translateY(-50%)!important;width:335px!important;min-width:335px!important;max-width:335px!important;display:flex!important;flex-wrap:nowrap!important;align-items:center!important;gap:7px!important;margin:0!important;}\n  .birth-form .birth-date-trigger{flex:0 0 230px!important;width:230px!important;min-width:230px!important;}\n  .birth-form button{flex:0 0 auto!important;}\n  .birth-result{position:fixed!important;}\n  @media(max-width:760px) and (hover:none) and (pointer:coarse){\n    .birth-box{min-height:76px!important;padding:14px!important;overflow:visible!important;}\n    .birth-copy{display:none!important;}\n    .birth-form{left:14px!important;right:auto!important;top:50%!important;width:335px!important;min-width:335px!important;max-width:335px!important;transform:translateY(-50%)!important;}\n  }`;\n  document.head.appendChild(s);\n})();\n
