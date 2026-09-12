@@ -46,6 +46,7 @@
       const personal=76+((y*31+m*17+d*13+now.getDate()*7+now.getMonth()*11)%20);
       result.textContent=y+'.'+String(m).padStart(2,'0')+'.'+String(d).padStart(2,'0')+' · '+animal;
       result.classList.remove('birth-warning');
+      result.style.position='';result.style.left='';result.style.right='';result.style.top='';result.style.bottom='';result.style.transform='';result.style.width='';result.style.pointerEvents='';
       const badge=document.querySelector('#fortune .badge'),summaryTitle=document.getElementById('summaryTitle'),score=document.getElementById('score');
       if(badge)badge.innerHTML='오늘의 '+animal+' 운세 <span class="personal-badge">PERSONAL</span>';
       if(summaryTitle)summaryTitle.textContent=personal>=90?'오늘은 흐름을 적극적으로 잡아보세요.':personal>=84?'차분하게 움직이면 좋은 흐름이 이어져요.':'작은 선택 하나가 오늘의 분위기를 바꿔요.';
@@ -76,31 +77,34 @@
     function openPicker(){positionPicker();renderCalendar();picker.classList.add('open');}
     function closePicker(){picker.classList.remove('open');yearMode=false;}
     function showBirthWarning(){
-      // 경고문을 폼의 레이아웃에 참여시키지 않고 birth-box 안에서 절대 위치로 배치합니다.
+      // 경고문은 fixed로 표시해 어떤 flex 레이아웃에도 참여하지 않도록 합니다.
       result.textContent='생년월일을 먼저 설정해주세요.';
       result.classList.add('birth-warning');
-      const box=form.closest('.birth-box');
-      if(box){
-        box.style.position='relative';
-        const fr=form.getBoundingClientRect();
-        const br=box.getBoundingClientRect();
-        result.style.left=Math.max(10,fr.left-br.left-result.offsetWidth-10)+'px';
-        result.style.top=(fr.top-br.top+(fr.height-result.offsetHeight)/2)+'px';
-      }
+      result.style.position='fixed';
+      result.style.right='auto';
+      result.style.bottom='auto';
+      result.style.width='max-content';
+      result.style.pointerEvents='none';
+      result.style.zIndex='100000';
+      const r=trigger.getBoundingClientRect();
+      // 입력칸 왼쪽에 정확히 붙이고 세로 중앙을 맞춥니다.
+      result.style.left=Math.max(8,r.left-result.offsetWidth-10)+'px';
+      result.style.top=(r.top+(r.height-result.offsetHeight)/2)+'px';
     }
     trigger.addEventListener('click',e=>{e.stopPropagation();picker.classList.contains('open')?closePicker():openPicker();});
     trigger.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();picker.classList.contains('open')?closePicker():openPicker();}});
     title.addEventListener('click',e=>{e.stopPropagation();yearMode?renderCalendar():renderYears();});
     picker.querySelector('.bp-prev').addEventListener('click',e=>{e.stopPropagation();if(yearMode){viewYear=Math.max(minYear,viewYear-12);renderYears();return;}if(viewMonth===0){viewYear--;viewMonth=11;}else viewMonth--;renderCalendar();});
     picker.querySelector('.bp-next').addEventListener('click',e=>{e.stopPropagation();if(yearMode){viewYear=Math.min(maxDate.getFullYear(),viewYear+12);renderYears();return;}if(viewMonth===11){viewYear++;viewMonth=0;}else viewMonth++;renderCalendar();});
-    document.addEventListener('click',e=>{if(!trigger.contains(e.target)&&!picker.contains(e.target))closePicker();});window.addEventListener('resize',()=>{if(picker.classList.contains('open'))positionPicker();if(result.classList.contains('birth-warning')){const box=form.closest('.birth-box');if(box){const fr=form.getBoundingClientRect(),br=box.getBoundingClientRect();result.style.left=Math.max(10,fr.left-br.left-result.offsetWidth-10)+'px';result.style.top=(fr.top-br.top+(fr.height-result.offsetHeight)/2)+'px';}}});
+    document.addEventListener('click',e=>{if(!trigger.contains(e.target)&&!picker.contains(e.target))closePicker();});
+    window.addEventListener('resize',()=>{if(picker.classList.contains('open'))positionPicker();if(result.classList.contains('birth-warning')){const r=trigger.getBoundingClientRect();result.style.left=Math.max(8,r.left-result.offsetWidth-10)+'px';result.style.top=(r.top+(r.height-result.offsetHeight)/2)+'px';}});
     form.addEventListener('submit',e=>{
       e.preventDefault();
       if(!input.value){showBirthWarning();openPicker();return;}
-      localStorage.setItem('mira_birth_date',input.value);renderDate();result.classList.remove('birth-warning');result.style.left='';result.style.top='';restoreResultState();applyBirthDate(input.value);closePicker();
+      localStorage.setItem('mira_birth_date',input.value);renderDate();result.classList.remove('birth-warning');result.style.position='';result.style.left='';result.style.right='';result.style.top='';result.style.bottom='';result.style.transform='';result.style.width='';result.style.pointerEvents='';restoreResultState();applyBirthDate(input.value);closePicker();
     });
     const resetBtn=document.createElement('button');resetBtn.type='button';resetBtn.className='birth-reset';resetBtn.textContent='초기화';form.appendChild(resetBtn);
-    resetBtn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();input.value='';localStorage.removeItem('mira_birth_date');renderDate();result.textContent='';result.classList.remove('birth-warning');result.style.left='';result.style.top='';renderEmptyState();closePicker();});
+    resetBtn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();input.value='';localStorage.removeItem('mira_birth_date');renderDate();result.textContent='';result.classList.remove('birth-warning');result.style.position='';result.style.left='';result.style.right='';result.style.top='';result.style.bottom='';result.style.transform='';result.style.width='';result.style.pointerEvents='';renderEmptyState();closePicker();});
     renderEmptyState();
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',patchHome);else patchHome();
@@ -113,9 +117,9 @@
 .birth-date-trigger{position:relative;width:230px;height:48px;display:flex;align-items:center;padding:0 14px;background:#f8f5ed;border:1px solid #d7d0c1;border-radius:12px;color:#89928a;cursor:pointer;overflow:hidden;box-sizing:border-box;user-select:none}.birth-date-trigger:hover{border-color:#a9bda9;background:#fbf9f3}.birth-date-trigger:focus{outline:none;border-color:#5c8d71;box-shadow:0 0 0 4px rgba(92,141,113,.12);background:#fffdf8}.birth-date-icon{width:28px;flex:0 0 28px;color:#aa8f59;font-size:13px;pointer-events:none}.birth-date-value{font-size:14px;font-weight:700;pointer-events:none}.birth-date-value.has-value{color:#244638}.birth-reset{height:38px;border:1px solid #d7d0c1;border-radius:9px;background:#fbf9f2;color:#7b837c;padding:0 13px;font-size:12px;font-weight:900;cursor:pointer}.birth-reset:hover{background:#f1eee5;border-color:#c8c0b1;color:#52675a}
 .birth-picker{position:fixed;z-index:99999;width:280px;padding:14px;background:#fffdf8;border:1px solid #ddd6c7;border-radius:16px;box-shadow:0 16px 40px rgba(36,70,56,.16);display:none}.birth-picker.open{display:block}.birth-picker-head{display:grid;grid-template-columns:36px 1fr 36px;align-items:center;margin-bottom:10px}.bp-title{border:0;background:transparent;text-align:center;font-size:14px;font-weight:900;color:#244638;cursor:pointer;padding:7px;border-radius:8px}.bp-title:hover{background:#eaf2eb}.birth-picker-head button:not(.bp-title){width:32px;height:32px;border:0;border-radius:9px;background:#f1f4ee;color:#507960;font-size:22px;cursor:pointer}.birth-picker-head button:hover{background:#e4eee5}.birth-picker-head button:disabled{opacity:.3;cursor:default}.bp-year-panel{display:none;grid-template-columns:repeat(3,1fr);gap:6px;margin:4px 0 8px}.bp-year-panel.open{display:grid}.bp-year{height:38px;border:0;border-radius:9px;background:#f6f3eb;color:#52675a;font-size:11px;cursor:pointer}.bp-year:hover{background:#eaf2eb}.bp-year.selected{background:#5c8d71;color:#fff;font-weight:900}.bp-week,.bp-days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}.bp-week span{text-align:center;font-size:10px;color:#999f98;padding:5px 0}.bp-days{margin-top:3px}.bp-day,.bp-empty{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:0;border-radius:9px;background:transparent;font-size:11px;color:#52675a;cursor:pointer}.bp-day:hover{background:#eaf2eb;color:#244638}.bp-day.today{box-shadow:inset 0 0 0 1px #b9ccb9}.bp-day.selected{background:#5c8d71;color:#fff;font-weight:900}.bp-day:disabled{color:#d4d2ca;cursor:default;background:transparent}
 #fortune .overview{grid-template-columns:1.35fr .65fr;gap:10px}#fortune .overview>.main,#fortune .overview>.lucky{height:232px;min-height:232px;box-sizing:border-box;overflow:hidden}#fortune .four{grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}#fortune .four>.fortune{height:116px;min-height:116px;box-sizing:border-box;overflow:hidden}#fortune .overview>.main{padding:17px 19px}#fortune .overview>.lucky{padding:15px 17px}#fortune .overview>.lucky .luckrow{padding:5px 0}#fortune .overview>.lucky .luckrow b{padding:5px 8px}#fortune .four>.fortune small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-/* 경고문은 레이아웃을 밀지 않도록 birth-box 안에서만 절대 위치로 표시합니다. */
-.birth-box{position:relative}.birth-result.birth-warning{position:absolute;margin:0;white-space:nowrap;z-index:10;display:block}
-@media(max-width:760px) and (hover:none) and (pointer:coarse){.birth-date-trigger{width:auto;flex:1;height:46px}.birth-date-icon{width:26px;flex-basis:26px}.birth-picker{width:calc(100vw - 24px);max-width:320px}.bp-day,.bp-empty{width:100%;height:34px}.birth-form{display:flex;flex-wrap:wrap}.birth-form .birth-date-trigger{flex:1;min-width:0}.birth-form .birth-result.birth-warning{position:absolute;left:10px!important;right:auto!important;top:auto!important;bottom:8px!important;transform:none;margin:0}.birth-result.birth-warning{font-size:10px}}
+/* 경고문은 화면에 고정해 표시하므로 입력칸이나 birth-box의 위치에 영향을 주지 않습니다. */
+.birth-box{position:relative}.birth-result.birth-warning{position:fixed!important;right:auto!important;bottom:auto!important;margin:0!important;white-space:nowrap;z-index:100000;display:block;transform:none!important;}
+@media(max-width:760px) and (hover:none) and (pointer:coarse){.birth-date-trigger{width:auto;flex:1;height:46px}.birth-date-icon{width:26px;flex-basis:26px}.birth-picker{width:calc(100vw - 24px);max-width:320px}.bp-day,.bp-empty{width:100%;height:34px}.birth-form{display:flex;flex-wrap:wrap}.birth-form .birth-date-trigger{flex:1;min-width:0}.birth-result.birth-warning{position:fixed!important;left:10px!important;right:auto!important;top:auto!important;bottom:10px!important;transform:none!important;margin:0!important}.birth-result.birth-warning{font-size:10px}}
 `;
   document.head.appendChild(style);
 })();
