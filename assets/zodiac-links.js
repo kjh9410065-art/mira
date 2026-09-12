@@ -121,8 +121,7 @@
     function closePicker(){picker.classList.remove('open');yearMode=false;}
 
     function showWarning(){
-      // 핵심 수정: 경고문 자체를 birth-box에서 떼어 body로 이동시킵니다.
-      // 따라서 flex/grid 계산에 참여할 수 없어 입력칸과 버튼이 절대로 밀리지 않습니다.
+      // 경고문을 폼에서 분리해도 입력 폼의 위치는 고정된 상태를 유지합니다.
       result.textContent='생년월일을 먼저 설정해주세요.';
       result.classList.add('birth-warning');
       document.body.appendChild(result);
@@ -136,7 +135,6 @@
       result.style.bottom='auto';
       result.style.zIndex='100000';
       result.style.pointerEvents='none';
-      // 화면 밖에서 실제 너비를 측정한 뒤 입력칸 왼쪽에 배치합니다.
       const r=trigger.getBoundingClientRect();
       result.style.left=Math.max(8,r.left-result.offsetWidth-10)+'px';
       result.style.top=(r.top+(r.height-result.offsetHeight)/2)+'px';
@@ -180,12 +178,13 @@
 (function(){
   const s=document.createElement('style');
   s.textContent=`
-.birth-date-trigger{position:relative;width:230px;height:48px;display:flex;align-items:center;padding:0 14px;background:#f8f5ed;border:1px solid #d7d0c1;border-radius:12px;color:#89928a;cursor:pointer;overflow:hidden;box-sizing:border-box;user-select:none}.birth-date-trigger:hover{border-color:#a9bda9;background:#fbf9f3}.birth-date-trigger:focus{outline:none;border-color:#5c8d71;box-shadow:0 0 0 4px rgba(92,141,113,.12);background:#fffdf8}.birth-date-icon{width:28px;flex:0 0 28px;color:#aa8f59;font-size:13px;pointer-events:none}.birth-date-value{font-size:14px;font-weight:700;pointer-events:none}.birth-date-value.has-value{color:#244638}.birth-reset{height:38px;border:1px solid #d7d0c1;border-radius:9px;background:#fbf9f2;color:#7b837c;padding:0 13px;font-size:12px;font-weight:900;cursor:pointer}.birth-reset:hover{background:#f1eee5;border-color:#c8c0b1;color:#52675a}
+.birth-date-trigger{position:relative;width:230px;height:48px;display:flex;align-items:center;padding:0 14px;background:#f8f5ed;border:1px solid #d7d0c1;border-radius:12px;color:#89928a;cursor:pointer;overflow:hidden;box-sizing:border-box;user-select:none;flex:0 0 230px}.birth-date-trigger:hover{border-color:#a9bda9;background:#fbf9f3}.birth-date-trigger:focus{outline:none;border-color:#5c8d71;box-shadow:0 0 0 4px rgba(92,141,113,.12);background:#fffdf8}.birth-date-icon{width:28px;flex:0 0 28px;color:#aa8f59;font-size:13px;pointer-events:none}.birth-date-value{font-size:14px;font-weight:700;pointer-events:none}.birth-date-value.has-value{color:#244638}.birth-reset{height:38px;border:1px solid #d7d0c1;border-radius:9px;background:#fbf9f2;color:#7b837c;padding:0 13px;font-size:12px;font-weight:900;cursor:pointer;flex:0 0 auto}.birth-reset:hover{background:#f1eee5;border-color:#c8c0b1;color:#52675a}
+/* 입력창과 버튼은 birth-box 안에서 항상 같은 위치에 있도록 고정 폭 영역으로 유지합니다. */
+.birth-box{position:relative}.birth-form{flex:0 0 auto;width:335px;min-width:335px;display:flex;align-items:center;gap:7px}.birth-form button{flex:0 0 auto}.birth-result{flex:0 0 auto}
 .birth-picker{position:fixed;z-index:99999;width:280px;padding:14px;background:#fffdf8;border:1px solid #ddd6c7;border-radius:16px;box-shadow:0 16px 40px rgba(36,70,56,.16);display:none}.birth-picker.open{display:block}.birth-picker-head{display:grid;grid-template-columns:36px 1fr 36px;align-items:center;margin-bottom:10px}.bp-title{border:0;background:transparent;text-align:center;font-size:14px;font-weight:900;color:#244638;cursor:pointer;padding:7px;border-radius:8px}.bp-title:hover{background:#eaf2eb}.birth-picker-head button:not(.bp-title){width:32px;height:32px;border:0;border-radius:9px;background:#f1f4ee;color:#507960;font-size:22px;cursor:pointer}.birth-picker-head button:disabled{opacity:.3;cursor:default}.bp-year-panel{display:none;grid-template-columns:repeat(3,1fr);gap:6px;margin:4px 0 8px}.bp-year-panel.open{display:grid}.bp-year{height:38px;border:0;border-radius:9px;background:#f6f3eb;color:#52675a;font-size:11px;cursor:pointer}.bp-year.selected{background:#5c8d71;color:#fff;font-weight:900}.bp-week,.bp-days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}.bp-week span{text-align:center;font-size:10px;color:#999f98;padding:5px 0}.bp-days{margin-top:3px}.bp-day,.bp-empty{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:0;border-radius:9px;background:transparent;font-size:11px;color:#52675a;cursor:pointer}.bp-day:hover{background:#eaf2eb;color:#244638}.bp-day.today{box-shadow:inset 0 0 0 1px #b9ccb9}.bp-day.selected{background:#5c8d71;color:#fff;font-weight:900}.bp-day:disabled{color:#d4d2ca;cursor:default;background:transparent}
 #fortune .overview{grid-template-columns:1.35fr .65fr;gap:10px}#fortune .overview>.main,#fortune .overview>.lucky{height:232px;min-height:232px;box-sizing:border-box;overflow:hidden}#fortune .four{grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}#fortune .four>.fortune{height:116px;min-height:116px;box-sizing:border-box;overflow:hidden}#fortune .overview>.main{padding:17px 19px}#fortune .overview>.lucky{padding:15px 17px}#fortune .overview>.lucky .luckrow{padding:5px 0}#fortune .overview>.lucky .luckrow b{padding:5px 8px}#fortune .four>.fortune small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-/* 경고문은 body로 이동된 fixed 요소라 입력 폼의 레이아웃을 전혀 건드리지 않습니다. */
 .birth-result.birth-warning{position:fixed!important;z-index:100000!important;display:block!important;white-space:nowrap!important;width:max-content!important;margin:0!important;pointer-events:none!important;transform:none!important;right:auto!important;bottom:auto!important}
-@media(max-width:760px) and (hover:none) and (pointer:coarse){.birth-date-trigger{width:auto;flex:1;height:46px}.birth-date-icon{width:26px;flex-basis:26px}.birth-picker{width:calc(100vw - 24px);max-width:320px}.bp-day,.bp-empty{width:100%;height:34px}.birth-form{display:flex;flex-wrap:wrap}.birth-form .birth-date-trigger{flex:1;min-width:0}}
+@media(max-width:760px) and (hover:none) and (pointer:coarse){.birth-date-trigger{width:230px;flex:0 0 230px;height:46px}.birth-date-icon{width:26px;flex-basis:26px}.birth-picker{width:calc(100vw - 24px);max-width:320px}.bp-day,.bp-empty{width:100%;height:34px}.birth-form{display:flex;flex:0 0 auto;width:100%;min-width:0;flex-wrap:nowrap}.birth-form .birth-date-trigger{flex:0 0 230px;min-width:230px}}
 `;
   document.head.appendChild(s);
 })();
