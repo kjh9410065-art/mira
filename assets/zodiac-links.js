@@ -1,10 +1,9 @@
-// 생년월일 운세 기능을 기존 로직과 최종 레이아웃 패치로 연결합니다.
+// 생년월일 운세 기능의 기존 로직을 불러온 뒤 최종 레이아웃을 적용합니다.
 (function(){
   const legacy='https://raw.githubusercontent.com/kjh9410065-art/mira/700b090bcbba4da8200cfb8c9a9e038024d09e8b/assets/zodiac-links.js';
   const script=document.createElement('script');
   script.src=legacy;
   script.onload=()=>{
-    // 기존 스크립트가 폼을 생성한 뒤 최종 배치를 적용합니다.
     const apply=()=>{
       const form=document.getElementById('birthForm');
       const result=document.getElementById('birthResult');
@@ -12,7 +11,7 @@
       const reset=form&&form.querySelector('.birth-reset');
       if(!form||!result||!trigger||!reset){setTimeout(apply,100);return;}
 
-      // 결과/경고 문구를 생년월일 입력창 왼쪽으로 실제 DOM 이동합니다.
+      // 결과/경고 문구를 생년월일 입력창 바로 왼쪽으로 이동합니다.
       form.insertBefore(result,trigger);
 
       const style=document.createElement('style');
@@ -29,11 +28,22 @@
           .birth-box{min-height:76px!important;padding:14px!important;}
           .birth-copy{display:none!important;}
           .birth-form{left:10px!important;right:auto!important;width:calc(100% - 20px)!important;min-width:0!important;max-width:none!important;}
-          .birth-form .birth-result{flex-basis:78px!important;width:78px!important;min-width:78px!important;}
-          .birth-form .birth-date-trigger{flex:1 1 auto!important;min-width:0!important;}
         }
       `;
       document.head.appendChild(style);
+
+      // 기존 경고 함수가 결과 요소를 body로 옮겨도 다시 입력 폼의 왼쪽 슬롯으로 되돌립니다.
+      const observer=new MutationObserver(()=>{
+        const f=document.getElementById('birthForm');
+        const r=document.getElementById('birthResult');
+        const t=f&&f.querySelector('.birth-date-trigger');
+        if(!f||!r||!t)return;
+        if(r.classList.contains('birth-warning')){
+          f.insertBefore(r,t);
+          r.removeAttribute('style');
+        }
+      });
+      observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style']});
     };
     apply();
   };
