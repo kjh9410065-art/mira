@@ -1,0 +1,59 @@
+name: Mira remove zodiac section
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 2
+      - name: Remove zodiac section and modal
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('index.html')
+          html = p.read_text(encoding='utf-8')
+
+          # 홈 화면에서 띠·별자리 영역 전체를 제거한다.
+          html, n1 = re.subn(r'<div id="zodiac" class="zodiac-box">.*?</div></section>', '</section>', html, count=1, flags=re.S)
+          if n1 != 1:
+              raise SystemExit('zodiac section not found')
+
+          # 삭제한 영역과 함께 쓰이던 상세 모달도 제거한다.
+          html, n2 = re.subn(r'<div class="z-detail" id="zDetail".*?</div></div><section id="tests">', '<section id="tests">', html, count=1, flags=re.S)
+          if n2 != 1:
+              raise SystemExit('zodiac detail modal not found')
+
+          p.write_text(html, encoding='utf-8')
+          PY
+      - name: Remove obsolete zodiac menu links
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          html = p.read_text(encoding='utf-8')
+          html = html.replace('<a href="#zodiac"><span class="ico">◈</span>띠 운세</a>', '')
+          html = html.replace('<a href="#zodiac"><span class="ico">✦</span>별자리 운세</a>', '')
+          html = html.replace('<a href="#zodiac">띠·별자리</a>', '')
+          p.write_text(html, encoding='utf-8')
+          PY
+      - name: Commit cleanup and remove workflow
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git rm .github/workflows/remove-zodiac-section.yml
+          git commit -m "Mira 띠별 별자리 영역 제거"
+          git push
