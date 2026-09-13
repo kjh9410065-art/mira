@@ -1,0 +1,60 @@
+name: Mira remove legacy fortune script
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 2
+      - name: Remove legacy inline fortune generator
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path('index.html')
+          html = p.read_text(encoding='utf-8')
+
+          # 기존 index.html 안의 랜덤 운세 생성 스크립트는
+          # zodiac-links.js의 새 결정론적 계산을 덮어쓰므로 완전히 제거한다.
+          pattern = r'<script>document\.addEventListener\(\'DOMContentLoaded\',function\(\)\{.*?</script>'
+          cleaned, count = re.subn(pattern, '', html, count=1, flags=re.S)
+          if count != 1:
+              raise SystemExit('legacy inline fortune script not found')
+
+          p.write_text(cleaned, encoding='utf-8')
+          print('removed legacy inline fortune script')
+          PY
+      - name: Strengthen pre-input card lock
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          html = p.read_text(encoding='utf-8')
+          old = "body.mira-pre-input-lock .overview .four .fortune > *{visibility:hidden!important;opacity:0!important}"
+          new = "body.mira-pre-input-lock .overview .four .fortune > *{visibility:hidden!important;opacity:0!important;display:none!important}"
+          if old not in html:
+              raise SystemExit('pre-input lock selector not found')
+          html = html.replace(old, new, 1)
+          p.write_text(html, encoding='utf-8')
+          PY
+      - name: Commit final cleanup and remove workflow
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git rm .github/workflows/remove-legacy-fortune-script.yml
+          git commit -m "Remove legacy random fortune renderer"
+          git push
