@@ -35,7 +35,7 @@
     const o=document.querySelector('.overview');if(!o)return;const f=calcFortune(year,month,day);o.classList.remove('mira-pending');o.classList.add('mira-ready');
     const main=o.querySelector('.main');
     if(main){const badge=main.querySelector('.badge'),h=main.querySelector('h3'),p=main.querySelector('p'),s=main.querySelector('.score b');if(badge)badge.textContent=f.level(f.scores.total);if(h)h.textContent=`${f.birthYear.stem}${f.birthYear.branch} · ${f.birthDay.stem}${f.birthDay.branch} · 오늘 ${f.today.stem}${f.today.branch}`;if(p)p.textContent=f.relation;if(s)s.textContent=f.scores.total;const score=main.querySelector('.score');if(score)score.style.removeProperty('display');}
-    o.querySelectorAll('.four .fortune').forEach((c,n)=>{const scores=[f.scores.money,f.scores.love,f.scores.work,f.scores.health],titles=[f.level(scores[0]),f.level(scores[1]),f.level(scores[2]),f.level(scores[3])],texts=[f.moneyText,f.loveText,f.workText,f.healthText];const s=c.querySelector('strong'),p=c.querySelector('small'),score=c.querySelector('.score b');if(s){s.textContent=titles[n];s.style.removeProperty('display');}if(p){p.textContent=texts[n];p.style.removeProperty('display');}if(score){score.textContent=scores[n];score.style.removeProperty('display');}});
+    o.querySelectorAll('.four .fortune').forEach((c,n)=>{const scores=[f.scores.money,f.scores.love,f.scores.work,f.scores.health],titles=[f.level(scores[0]),f.level(scores[1]),f.level(scores[2]),f.level(scores[3])],texts=[f.moneyText,f.loveText,f.workText,f.healthText];const s=c.querySelector('strong'),p=c.querySelector('small'),score=c.querySelector('.score b');if(s){s.textContent=scores[n]+'점';s.style.removeProperty('display');}if(p){p.textContent=texts[n];p.style.removeProperty('display');}if(score){score.textContent=scores[n];score.style.removeProperty('display');}});
   }
   function style(){
     if(document.getElementById('mira-final-style'))return;const s=document.createElement('style');s.id='mira-final-style';s.textContent=`
@@ -69,5 +69,5 @@
     try{const saved=localStorage.getItem('mira_birth_date');if(saved&&/^\d{4}-\d{2}-\d{2}$/.test(saved)){const [y,m,d]=saved.split('-').map(Number);trigger.dataset.date=saved;trigger.textContent=`${y}년 ${String(m).padStart(2,'0')}월 ${String(d).padStart(2,'0')}일`;r.textContent=y+'년생 · '+animal(y);}}catch(x){}
     pending();
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});else setup();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(setup,0),{once:true});else setTimeout(setup,0);
 })();
