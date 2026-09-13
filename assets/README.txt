@@ -1,1 +1,0 @@
-AI-generated site image assets are stored in the repository under this directory.
