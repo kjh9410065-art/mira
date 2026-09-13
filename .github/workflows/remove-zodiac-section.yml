@@ -20,32 +20,30 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
           p = Path('index.html')
           html = p.read_text(encoding='utf-8')
 
-          # 홈 화면의 띠·별자리 영역 전체를 제거한다.
-          html, n1 = re.subn(r'<div id="zodiac" class="zodiac-box">.*?</div></section>', '</section>', html, count=1, flags=re.S)
-          if n1 != 1:
-              raise SystemExit('zodiac section not found')
+          # 중첩된 div가 많아도 정확히 영역의 시작/다음 영역 경계로 제거한다.
+          start = '<div id="zodiac" class="zodiac-box">'
+          end = '<div class="z-detail" id="zDetail"'
+          a = html.find(start)
+          b = html.find(end, a + len(start)) if a >= 0 else -1
+          if a < 0 or b < 0:
+              raise SystemExit('zodiac section boundary not found')
+          html = html[:a] + html[b:]
 
-          # 제거한 영역의 상세 모달도 함께 제거한다.
-          html, n2 = re.subn(r'<div class="z-detail" id="zDetail".*?(?=<section id="tests">)', '', html, count=1, flags=re.S)
-          if n2 != 1:
-              raise SystemExit('zodiac detail modal not found')
+          # 상세 모달부터 테스트 영역 시작 직전까지 제거한다.
+          a = html.find(end)
+          b = html.find('<section id="tests">', a + len(end)) if a >= 0 else -1
+          if a < 0 or b < 0:
+              raise SystemExit('zodiac modal boundary not found')
+          html = html[:a] + html[b:]
 
-          p.write_text(html, encoding='utf-8')
-          PY
-      - name: Remove obsolete zodiac menu links
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('index.html')
-          html = p.read_text(encoding='utf-8')
+          # 더 이상 존재하지 않는 띠·별자리 메뉴 링크도 제거한다.
           html = html.replace('<a href="#zodiac"><span class="ico">◈</span>띠 운세</a>', '')
           html = html.replace('<a href="#zodiac"><span class="ico">✦</span>별자리 운세</a>', '')
           html = html.replace('<a href="#zodiac">띠·별자리</a>', '')
+
           p.write_text(html, encoding='utf-8')
           PY
       - name: Commit cleanup and remove workflow
