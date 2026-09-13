@@ -48,14 +48,15 @@
     const s=document.createElement('style');
     s.id='mira-final-style';
     s.textContent=`
-      .birth-form{display:grid!important;grid-template-columns:125px minmax(190px,1fr) auto 64px!important;gap:7px!important;align-items:center!important;width:min(500px,100%)!important;min-width:0!important}
+      .birth-form{display:grid!important;grid-template-columns:125px minmax(180px,1fr) auto 72px!important;gap:7px!important;align-items:center!important;width:min(500px,100%)!important;min-width:0!important}
       .birth-form .birth-result{grid-column:1!important;grid-row:1!important;position:static!important;width:125px!important;min-width:125px!important;max-width:125px!important;margin:0!important;white-space:nowrap!important;overflow:visible!important;text-align:left!important;transform:translateX(-20px)!important;font-size:11px!important;font-weight:900!important;color:#5c8d71!important}
       .birth-form .birth-result.birth-warning{color:#a15b4c!important}
       /* 입력칸 전체가 클릭 영역입니다. 직접 숫자를 입력하지 않습니다. */
       .birth-form .mira-date-trigger{grid-column:2!important;grid-row:1!important;width:100%!important;height:38px!important;box-sizing:border-box!important;border:1px solid #d3cdbf!important;border-radius:9px!important;background:#fffdf8!important;color:#5b675f!important;padding:0 12px!important;text-align:left!important;font-size:13px!important;cursor:pointer!important;position:relative!important}
       .birth-form .mira-date-trigger::after{content:'▾';position:absolute;right:12px;top:9px;font-size:12px;color:#68756d}
       .birth-form button[type="submit"]{grid-column:3!important;grid-row:1!important;height:38px!important;white-space:nowrap!important}
-      .birth-form .birth-reset{grid-column:4!important;grid-row:1!important;width:64px!important;min-width:64px!important;height:38px!important;border:1px solid #d3cdbf!important;border-radius:9px!important;background:#fffdf8!important;color:#587062!important;font-size:12px!important;font-weight:900!important;cursor:pointer!important}
+      /* 초기화 버튼은 글자가 줄바꿈되지 않도록 충분한 너비를 확보합니다. */
+      .birth-form .birth-reset{grid-column:4!important;grid-row:1!important;width:72px!important;min-width:72px!important;height:38px!important;box-sizing:border-box!important;padding:0 8px!important;border:1px solid #d3cdbf!important;border-radius:9px!important;background:#fffdf8!important;color:#587062!important;font-size:12px!important;font-weight:900!important;white-space:nowrap!important;word-break:keep-all!important;cursor:pointer!important}
       .mira-date-popup{position:absolute!important;z-index:9999!important;display:none!important;width:330px!important;padding:14px!important;background:#fffdf8!important;border:1px solid #d3cdbf!important;border-radius:12px!important;box-shadow:0 10px 30px rgba(60,55,45,.15)!important;box-sizing:border-box!important}
       .mira-date-popup.open{display:block!important}
       .mira-date-popup .mira-date-title{font-size:12px!important;font-weight:900!important;color:#53655b!important;margin-bottom:9px!important}
@@ -69,11 +70,11 @@
       .overview.mira-ready .card>*{visibility:visible!important;opacity:1!important}
       @media(max-width:760px) and (hover:none) and (pointer:coarse){
         .tests{display:none!important}
-        .birth-form{grid-template-columns:115px minmax(0,1fr) auto 60px!important;width:100%!important;gap:5px!important}
+        .birth-form{grid-template-columns:115px minmax(0,1fr) auto 68px!important;width:100%!important;gap:5px!important}
         .birth-form .birth-result{width:115px!important;min-width:115px!important;max-width:115px!important;font-size:10px!important;transform:translateX(-12px)!important}
         .birth-form .mira-date-trigger{grid-column:2!important;font-size:12px!important}
         .birth-form button[type="submit"]{grid-column:3!important;padding:0 10px!important}
-        .birth-form .birth-reset{grid-column:4!important;width:60px!important;min-width:60px!important;font-size:11px!important}
+        .birth-form .birth-reset{grid-column:4!important;width:68px!important;min-width:68px!important;font-size:11px!important;padding:0 6px!important}
         .mira-date-popup{position:fixed!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%)!important;width:min(330px,calc(100vw - 24px))!important}
       }
     `;
