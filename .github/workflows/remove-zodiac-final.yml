@@ -1,0 +1,52 @@
+name: Mira remove zodiac final
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  remove:
+    if: github.event.commits[0].message != 'Mira 띠·별자리 영역 완전 제거'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Remove zodiac block and links
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('index.html')
+          html = p.read_text(encoding='utf-8')
+
+          # 홈의 띠·별자리 영역과 상세 모달을 통째로 제거한다.
+          patterns = [
+              r'<div id="zodiac"\b.*?(?=<div class="z-detail" id="zDetail")',
+              r'<div class="z-detail" id="zDetail".*?(?=<section id="tests">)',
+          ]
+          for pattern in patterns:
+              html, count = re.subn(pattern, '', html, count=1, flags=re.S)
+              if count != 1:
+                  raise SystemExit(f'pattern not found: {pattern}')
+
+          # 상단/사이드 메뉴의 띠·별자리 링크도 제거한다.
+          html = re.sub(r'<a href="#zodiac">.*?(?:띠 운세|별자리 운세|띠·별자리).*?</a>', '', html)
+          p.write_text(html, encoding='utf-8')
+
+          # 결과 파일에 관련 UI가 남아 있지 않은지 최종 검증한다.
+          check = p.read_text(encoding='utf-8')
+          if 'id="zodiac"' in check or '띠·별자리 오늘운' in check or '12띠' in check or '12별자리' in check:
+              raise SystemExit('zodiac UI still remains after cleanup')
+          PY
+      - name: Commit and remove this workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git rm .github/workflows/remove-zodiac-final.yml
+          git commit -m "Mira 띠·별자리 영역 완전 제거"
+          git push
