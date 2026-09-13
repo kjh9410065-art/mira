@@ -4,18 +4,16 @@
   const stems=['갑','을','병','정','무','기','경','신','임','계'];
   const branches=['자','축','인','묘','진','사','오','미','신','유','술','해'];
   const stemElement=['목','목','화','화','토','토','금','금','수','수'];
-  const branchElement=['수','토','목','목','토','화','화','토','금','금','토','수'];
+  const branchElement=['수','토','목','목','토','화','화','토','미','금','토','수'];
   const elementIndex={목:0,화:1,토:2,금:3,수:4};
   const home=()=>location.pathname.replace(/\/+$/,'')==='';
   const animal=y=>animals[((y-2020)%12+12)%12];
 
-  // 출생 연도의 육십갑자를 계산합니다. 4년을 갑자 기준점으로 사용합니다.
   function yearPillar(year){
     const index=((year-4)%60+60)%60;
     return {index,stem:stems[index%10],branch:branches[index%12],element:stemElement[index%10]};
   }
 
-  // 그레고리력 생년월일을 율리우스일(JDN)로 변환합니다.
   function julianDay(year,month,day){
     let y=year,m=month;
     if(m<=2){y--;m+=12;}
@@ -24,24 +22,22 @@
     return Math.floor(365.25*(y+4716))+Math.floor(30.6001*(m+1))+day+b-1524;
   }
 
-  // 육십갑자 일진 계산식. JDN + 49를 60으로 나눈 나머지를 갑자(0)로 사용합니다.
   function dayPillar(year,month,day){
     const index=((julianDay(year,month,day)+49)%60+60)%60;
     return {index,stem:stems[index%10],branch:branches[index%12],element:stemElement[index%10],branchElement:branchElement[index%12]};
   }
 
-  // 출생 오행과 오늘 오행의 생·극 관계를 점수화합니다. 난수는 전혀 사용하지 않습니다.
+  // 생년월일과 오늘의 간지·오행 관계만 사용합니다. 난수는 사용하지 않습니다.
   function relationScore(birth,today){
     const a=elementIndex[birth.element];
     const b=elementIndex[today.element];
-    if(a===b)return 4;                 // 비화: 같은 오행
-    if((a+1)%5===b)return 5;          // 내가 생하는 오행
-    if((b+1)%5===a)return 3;          // 나를 생하는 오행
-    if((a+2)%5===b)return 1;          // 내가 극하는 오행
-    return 2;                          // 나를 극하는 오행
+    if(a===b)return 4;
+    if((a+1)%5===b)return 5;
+    if((b+1)%5===a)return 3;
+    if((a+2)%5===b)return 1;
+    return 2;
   }
 
-  // 생년월일 + 오늘 날짜를 간지·오행으로만 계산합니다. 같은 날짜에는 같은 결과가 나옵니다.
   function calcFortune(year,month,day){
     const now=new Date();
     const birthYear=yearPillar(year);
@@ -52,7 +48,6 @@
     const dayRelation=relationScore(birthDay,today);
     const branchRelation=relationScore({element:birthDay.branchElement},today);
 
-    // 각 영역에 전통 오행 관계를 서로 다른 비중으로 적용합니다.
     const scores={
       total:Math.max(55,Math.min(95,68+yearRelation*2+dayRelation*3+branchRelation)),
       money:Math.max(55,Math.min(95,67+yearRelation*2+dayRelation*2+branchRelation*2)),
@@ -69,53 +64,38 @@
       4:'출생 기운과 오늘의 기운이 같은 방향으로 움직여 안정적으로 이어지기 쉬워요.',
       5:'출생 기운이 오늘의 흐름을 자연스럽게 만들어 주는 관계라 적극적으로 움직이기 좋아요.'
     };
-
     const band=s=>s>=86?'high':s>=75?'mid':'low';
-    const moneyText={
-      high:'필요한 곳에 집중해서 쓰면 금전 흐름을 안정적으로 가져갈 수 있어요.',
-      mid:'큰 결정보다는 계획적인 소비와 작은 절약이 도움이 되는 날이에요.',
-      low:'충동적인 지출이나 즉흥적인 결정은 한 번 더 생각하고 움직이는 게 좋아요.'
-    };
-    const loveText={
-      high:'먼저 마음을 표현하면 관계가 한층 부드럽게 풀릴 수 있어요.',
-      mid:'상대의 말을 끝까지 듣는 것이 오늘의 관계운을 좋게 만드는 포인트예요.',
-      low:'감정적으로 결론을 내리기보다 조금 여유를 두고 대화하는 편이 좋아요.'
-    };
-    const workText={
-      high:'미뤄둔 일을 시작하기 좋은 흐름이에요. 작은 일부터 처리해보세요.',
-      mid:'한꺼번에 처리하기보다 우선순위를 정하면 실수가 줄어들어요.',
-      low:'속도보다 정확도가 중요한 날이에요. 중요한 결정은 한 번 더 확인하세요.'
-    };
-    const healthText={
-      high:'컨디션이 비교적 안정적인 흐름이라 가벼운 활동을 꾸준히 이어가면 좋아요.',
-      mid:'생활 리듬을 일정하게 유지하고 과하게 무리하지 않는 것이 좋아요.',
-      low:'피로를 쌓아두지 않는 것이 중요해요. 오늘은 휴식과 수면을 우선하세요.'
-    };
+    const moneyText={high:'필요한 곳에 집중해서 쓰면 금전 흐름을 안정적으로 가져갈 수 있어요.',mid:'큰 결정보다는 계획적인 소비와 작은 절약이 도움이 되는 날이에요.',low:'충동적인 지출이나 즉흥적인 결정은 한 번 더 생각하고 움직이는 게 좋아요.'};
+    const loveText={high:'먼저 마음을 표현하면 관계가 한층 부드럽게 풀릴 수 있어요.',mid:'상대의 말을 끝까지 듣는 것이 오늘의 관계운을 좋게 만드는 포인트예요.',low:'감정적으로 결론을 내리기보다 조금 여유를 두고 대화하는 편이 좋아요.'};
+    const workText={high:'미뤄둔 일을 시작하기 좋은 흐름이에요. 작은 일부터 처리해보세요.',mid:'한꺼번에 처리하기보다 우선순위를 정하면 실수가 줄어들어요.',low:'속도보다 정확도가 중요한 날이에요. 중요한 결정은 한 번 더 확인하세요.'};
+    const healthText={high:'컨디션이 비교적 안정적인 흐름이라 가벼운 활동을 꾸준히 이어가면 좋아요.',mid:'생활 리듬을 일정하게 유지하고 과하게 무리하지 않는 것이 좋아요.',low:'피로를 쌓아두지 않는 것이 중요해요. 오늘은 휴식과 수면을 우선하세요.'};
 
-    return {
-      birthYear,birthDay,today,scores,level,
-      relation:relationText[yearRelation],
-      moneyText:moneyText[band(scores.money)],
-      loveText:loveText[band(scores.love)],
-      workText:workText[band(scores.work)],
-      healthText:healthText[band(scores.health)]
-    };
+    return {birthYear,birthDay,today,scores,level,relation:relationText[yearRelation],moneyText:moneyText[band(scores.money)],loveText:loveText[band(scores.love)],workText:workText[band(scores.work)],healthText:healthText[band(scores.health)]};
   }
 
   function hideTests(){
     if(home()) document.querySelectorAll('.tests,[href="#tests"],[href="/test/"],[href="/test"]').forEach(e=>e.remove());
   }
 
-  // 생년월일을 확인하기 전에는 기존 HTML의 기본 운세 숫자까지 모두 숨깁니다.
+  // 생년월일을 확인하기 전에는 모든 운세 내용과 점수를 비웁니다.
   function pending(){
     const o=document.querySelector('.overview');
     if(!o)return;
     o.classList.remove('mira-ready');
     o.classList.add('mira-pending');
+
     o.querySelectorAll('.score').forEach(el=>{
       el.style.setProperty('display','none','important');
       const value=el.querySelector('b');
       if(value)value.textContent='';
+    });
+
+    // 아래 4개 카드의 점수/설명은 HTML에 들어 있는 기본값까지 모두 제거합니다.
+    o.querySelectorAll('.four .fortune').forEach(card=>{
+      card.querySelectorAll('strong,small,.score').forEach(el=>{
+        el.textContent='';
+        el.style.setProperty('display','none','important');
+      });
     });
   }
 
@@ -128,10 +108,7 @@
 
     const main=o.querySelector('.main');
     if(main){
-      const badge=main.querySelector('.badge');
-      const h=main.querySelector('h3');
-      const p=main.querySelector('p');
-      const s=main.querySelector('.score b');
+      const badge=main.querySelector('.badge'),h=main.querySelector('h3'),p=main.querySelector('p'),s=main.querySelector('.score b');
       if(badge)badge.textContent=f.level(f.scores.total);
       if(h)h.textContent=`${f.birthYear.stem}${f.birthYear.branch} · ${f.birthDay.stem}${f.birthDay.branch} · 오늘 ${f.today.stem}${f.today.branch}`;
       if(p)p.textContent=f.relation;
@@ -140,15 +117,14 @@
       if(score)score.style.removeProperty('display');
     }
 
-    // 카드 순서는 재물·애정·직장·건강입니다.
     o.querySelectorAll('.four .fortune').forEach((c,n)=>{
       const scores=[f.scores.money,f.scores.love,f.scores.work,f.scores.health];
       const titles=[f.level(scores[0]),f.level(scores[1]),f.level(scores[2]),f.level(scores[3])];
       const texts=[f.moneyText,f.loveText,f.workText,f.healthText];
       const s=c.querySelector('strong'),p=c.querySelector('small'),score=c.querySelector('.score b');
-      if(s)s.textContent=titles[n];
-      if(p)p.textContent=texts[n];
-      if(score)score.textContent=scores[n];
+      if(s){s.textContent=titles[n];s.style.removeProperty('display');}
+      if(p){p.textContent=texts[n];p.style.removeProperty('display');}
+      if(score){score.textContent=scores[n];score.style.removeProperty('display');}
     });
   }
 
@@ -172,11 +148,15 @@
       .mira-date-popup .mira-date-actions{display:flex!important;justify-content:flex-end!important;gap:6px!important;margin-top:9px!important}
       .mira-date-popup button{height:34px!important;padding:0 12px!important;border-radius:8px!important;border:1px solid #d3cdbf!important;background:#fff!important;color:#52645a!important;font-weight:800!important;cursor:pointer!important}
       .mira-date-popup .mira-date-ok{background:#5c8d71!important;color:#fff!important;border-color:#5c8d71!important}
+      /* 출생일 확인 전에는 메인 운세 카드와 하단 4개 카드의 내용이 보이지 않습니다. */
       .overview.mira-pending .score{display:none!important}
       .overview.mira-pending .card>*{visibility:hidden!important;opacity:0!important}
       .overview.mira-pending .card{visibility:visible!important}
+      .overview.mira-pending .four .fortune>*{visibility:hidden!important;opacity:0!important}
+      .overview.mira-pending .four .fortune h3{visibility:visible!important;opacity:1!important}
       .overview.mira-ready .score{display:flex!important}
       .overview.mira-ready .card>*{visibility:visible!important;opacity:1!important}
+      .overview.mira-ready .four .fortune>*{visibility:visible!important;opacity:1!important}
       @media(max-width:760px) and (hover:none) and (pointer:coarse){
         .tests{display:none!important}
         .birth-form{grid-template-columns:115px minmax(0,1fr) auto 68px!important;width:100%!important;gap:5px!important}
@@ -213,12 +193,7 @@
     oldInput.replaceWith(trigger);
 
     let reset=form.querySelector('.birth-reset');
-    if(!reset){
-      reset=document.createElement('button');
-      reset.type='button';
-      reset.className='birth-reset';
-      form.appendChild(reset);
-    }
+    if(!reset){reset=document.createElement('button');reset.type='button';reset.className='birth-reset';form.appendChild(reset);}
     reset.type='button';
     reset.textContent='초기화';
 
@@ -228,17 +203,7 @@
 
     const popup=document.createElement('div');
     popup.className='mira-date-popup';
-    popup.innerHTML=`
-      <div class="mira-date-title">생년월일을 선택하세요</div>
-      <div class="mira-date-selects">
-        <select class="mira-year" aria-label="출생년도"></select>
-        <select class="mira-month" aria-label="출생월"></select>
-        <select class="mira-day" aria-label="출생일"></select>
-      </div>
-      <div class="mira-date-actions">
-        <button type="button" class="mira-date-cancel">취소</button>
-        <button type="button" class="mira-date-ok">선택</button>
-      </div>`;
+    popup.innerHTML=`<div class="mira-date-title">생년월일을 선택하세요</div><div class="mira-date-selects"><select class="mira-year" aria-label="출생년도"></select><select class="mira-month" aria-label="출생월"></select><select class="mira-day" aria-label="출생일"></select></div><div class="mira-date-actions"><button type="button" class="mira-date-cancel">취소</button><button type="button" class="mira-date-ok">선택</button></div>`;
     document.body.appendChild(popup);
 
     const ys=popup.querySelector('.mira-year'),ms=popup.querySelector('.mira-month'),ds=popup.querySelector('.mira-day');
@@ -290,12 +255,7 @@
       e.preventDefault();
       e.stopImmediatePropagation();
       const value=trigger.dataset.date||'';
-      if(!value){
-        r.textContent='생년월일을 선택해주세요.';
-        r.classList.add('birth-warning');
-        pending();
-        return;
-      }
+      if(!value){r.textContent='생년월일을 선택해주세요.';r.classList.add('birth-warning');pending();return;}
       const [y,m,d]=value.split('-').map(Number);
       r.classList.remove('birth-warning');
       r.textContent=y+'년생 · '+animal(y);
@@ -315,7 +275,6 @@
       pending();
     },true);
 
-    // 저장된 날짜는 입력칸에만 복원하고 운세는 자동 계산하지 않습니다.
     try{
       const saved=localStorage.getItem('mira_birth_date');
       if(saved&&/^\d{4}-\d{2}-\d{2}$/.test(saved)){
@@ -326,6 +285,7 @@
       }
     }catch(x){}
 
+    // 새로 들어오거나 새로고침해도 운세는 반드시 빈 상태로 시작합니다.
     pending();
   }
 
