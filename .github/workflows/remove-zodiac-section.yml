@@ -15,27 +15,23 @@ jobs:
         with:
           ref: main
           fetch-depth: 2
-      - name: Remove zodiac section
+      - name: Hide zodiac area permanently
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
           p = Path('index.html')
           html = p.read_text(encoding='utf-8')
-
-          # 띠·별자리 영역부터 심리테스트 영역 시작 전까지 한 번에 제거한다.
-          pattern = r'<div id="zodiac".*?<section id="tests">'
-          cleaned, count = re.subn(pattern, '<section id="tests">', html, count=1, flags=re.S)
-          if count != 1:
-              raise SystemExit('zodiac area not found')
-
-          # 상단 메뉴에서도 더 이상 존재하지 않는 링크를 제거한다.
-          cleaned = cleaned.replace('<a href="#zodiac"><span class="ico">◈</span>띠 운세</a>', '')
-          cleaned = cleaned.replace('<a href="#zodiac"><span class="ico">✦</span>별자리 운세</a>', '')
-          cleaned = cleaned.replace('<a href="#zodiac">띠·별자리</a>', '')
-
-          p.write_text(cleaned, encoding='utf-8')
+          marker = '</head>'
+          patch = '''<style id="mira-remove-zodiac">\n/* 홈 화면에서 띠·별자리 영역을 사용하지 않습니다. */\n.zodiac-box,.z-detail{display:none!important}\n</style>'''
+          if 'id="mira-remove-zodiac"' not in html:
+              if marker not in html:
+                  raise SystemExit('head marker not found')
+              html = html.replace(marker, patch + marker, 1)
+          html = html.replace('<a href="#zodiac"><span class="ico">◈</span>띠 운세</a>', '')
+          html = html.replace('<a href="#zodiac"><span class="ico">✦</span>별자리 운세</a>', '')
+          html = html.replace('<a href="#zodiac">띠·별자리</a>', '')
+          p.write_text(html, encoding='utf-8')
           PY
       - name: Commit cleanup and remove workflow
         shell: bash
