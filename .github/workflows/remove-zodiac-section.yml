@@ -24,13 +24,13 @@ jobs:
           p = Path('index.html')
           html = p.read_text(encoding='utf-8')
 
-          # 홈 화면에서 띠·별자리 영역 전체를 제거한다.
+          # 홈 화면의 띠·별자리 영역 전체를 제거한다.
           html, n1 = re.subn(r'<div id="zodiac" class="zodiac-box">.*?</div></section>', '</section>', html, count=1, flags=re.S)
           if n1 != 1:
               raise SystemExit('zodiac section not found')
 
-          # 삭제한 영역과 함께 쓰이던 상세 모달도 제거한다.
-          html, n2 = re.subn(r'<div class="z-detail" id="zDetail".*?</div></div><section id="tests">', '<section id="tests">', html, count=1, flags=re.S)
+          # 제거한 영역의 상세 모달도 함께 제거한다.
+          html, n2 = re.subn(r'<div class="z-detail" id="zDetail".*?(?=<section id="tests">)', '', html, count=1, flags=re.S)
           if n2 != 1:
               raise SystemExit('zodiac detail modal not found')
 
