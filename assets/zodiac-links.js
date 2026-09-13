@@ -8,12 +8,19 @@
     if(home()) document.querySelectorAll('.tests,[href="#tests"],[href="/test/"],[href="/test"]').forEach(e=>e.remove());
   }
 
-  // 출생일을 선택하기 전에는 운세 결과를 전부 숨깁니다.
+  // 출생일을 선택하기 전에는 운세 결과와 점수를 전부 숨깁니다.
   function pending(){
     const o=document.querySelector('.overview');
     if(!o)return;
     o.classList.remove('mira-ready');
     o.classList.add('mira-pending');
+
+    // HTML에 기본으로 들어 있는 점수가 다른 스크립트에 의해 다시 표시되지 않도록 강제로 숨깁니다.
+    o.querySelectorAll('.score').forEach(el=>{
+      el.style.setProperty('display','none','important');
+      const value=el.querySelector('b');
+      if(value)value.textContent='';
+    });
   }
 
   // 선택한 생년월일을 기준으로 운세 결과를 표시합니다.
@@ -34,6 +41,8 @@
       if(h)h.textContent=['작은 변화가 좋은 흐름을 만들어요.','천천히 움직일수록 결과가 좋아요.','새로운 기회를 놓치지 마세요.','정리와 집중이 행운을 불러요.'][i];
       if(p)p.textContent=['눈앞의 일을 하나씩 정리하면 생각보다 수월하게 풀리는 날이에요.','서두르기보다 순서를 정하면 오늘의 운이 안정적으로 이어져요.','평소와 다른 선택 하나가 오늘의 분위기를 바꿔줄 수 있어요.','해야 할 일을 가볍게 정리하면 마음도 한결 편안해져요.'][i];
       if(s)s.textContent=76+(seed%20);
+      const score=main.querySelector('.score');
+      if(score)score.style.removeProperty('display');
     }
 
     o.querySelectorAll('.four .fortune').forEach((c,n)=>{
@@ -65,8 +74,11 @@
       .mira-date-popup .mira-date-actions{display:flex!important;justify-content:flex-end!important;gap:6px!important;margin-top:9px!important}
       .mira-date-popup button{height:34px!important;padding:0 12px!important;border-radius:8px!important;border:1px solid #d3cdbf!important;background:#fff!important;color:#52645a!important;font-weight:800!important;cursor:pointer!important}
       .mira-date-popup .mira-date-ok{background:#5c8d71!important;color:#fff!important;border-color:#5c8d71!important}
+      /* 생년월일을 선택하기 전에는 운세 점수 영역 자체를 숨깁니다. */
+      .overview.mira-pending .score{display:none!important}
       .overview.mira-pending .card>*{visibility:hidden!important;opacity:0!important}
       .overview.mira-pending .card{visibility:visible!important}
+      .overview.mira-ready .score{display:flex!important}
       .overview.mira-ready .card>*{visibility:visible!important;opacity:1!important}
       @media(max-width:760px) and (hover:none) and (pointer:coarse){
         .tests{display:none!important}
