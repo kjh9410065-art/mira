@@ -1,0 +1,34 @@
+name: Mira one-time birth UI fix
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  fix:
+    if: github.event.head_commit.message != 'Mira birth UI final fix'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fix birth UI
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('assets/zodiac-links.js')
+          s=p.read_text(encoding='utf-8')
+          old="if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});else setup();"
+          new="if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(setup,0),{once:true});else setTimeout(setup,0);"
+          if old not in s: raise SystemExit('setup hook not found')
+          s=s.replace(old,new,1)
+          old_show="if(s){s.textContent=titles[n];s.style.removeProperty('display');}"
+          new_show="if(s){s.textContent=scores[n]+'점';s.style.removeProperty('display');}"
+          if old_show not in s: raise SystemExit('score renderer not found')
+          s=s.replace(old_show,new_show,1)
+          p.write_text(s,encoding='utf-8')
+          Path('.github/workflows/one-time-mira-fix.yml').unlink()
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/zodiac-links.js .github/workflows/one-time-mira-fix.yml
+          git commit -m 'Mira birth UI final fix'
+          git push
