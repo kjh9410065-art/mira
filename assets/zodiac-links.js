@@ -1,129 +1,46 @@
-// MIRA 최종 운세 UI 패치
-// 기존 운세 로직을 먼저 불러온 뒤, 빈 카드와 띠/별자리 상세 결과를 최종 적용합니다.
+// MIRA 최종 홈 화면 패치
+// 이전 상세 띠/별자리 기능을 불러온 뒤 index.html의 오래된 출생년도/심리테스트 로직이 덮어쓰지 못하게 마지막 상태를 적용합니다.
 (function(){
-  const legacy='https://raw.githubusercontent.com/kjh9410065-art/mira/a0f5cdf118947a3cfcb07d049784891f472773a0/assets/zodiac-links.js';
+  const legacy='https://raw.githubusercontent.com/kjh9410065-art/mira/2ab57f0a5c532f7203a71e73ace6283a174a1e94/assets/zodiac-links.js';
   const script=document.createElement('script');
   script.src=legacy;
   script.onload=()=>{
-    const apply=()=>{
-      const form=document.getElementById('birthForm');
-      const result=document.getElementById('birthResult');
-      const trigger=form&&form.querySelector('.birth-date-trigger');
-      const reset=form&&form.querySelector('.birth-reset');
-      const list=document.getElementById('zodiacList');
-      if(!form||!result||!trigger||!reset){setTimeout(apply,100);return;}
-
-      // 결과 문구를 생년월일 입력창 왼쪽에 고정합니다.
-      form.insertBefore(result,trigger);
-
-      const style=document.createElement('style');
-      style.textContent=`
-        .birth-box{position:relative!important;overflow:visible!important;}
-        .birth-form{position:absolute!important;left:10px!important;right:auto!important;top:50%!important;transform:translateY(-50%)!important;width:calc(100% - 20px)!important;min-width:0!important;height:48px!important;display:flex!important;align-items:center!important;flex-wrap:nowrap!important;gap:7px!important;margin:0!important;padding:0!important;box-sizing:border-box!important;}
-        .birth-form .birth-result{order:1!important;position:static!important;display:block!important;flex:0 0 78px!important;width:78px!important;min-width:78px!important;max-width:78px!important;margin:0!important;padding:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;text-align:left!important;font-size:11px!important;font-weight:800!important;color:#5c8d71!important;line-height:1.2!important;}
-        .birth-form .birth-date-trigger{order:2!important;flex:1 1 auto!important;width:auto!important;min-width:0!important;max-width:none!important;height:46px!important;}
-        .birth-form button[type="submit"]{order:3!important;flex:0 0 auto!important;white-space:nowrap!important;}
-        .birth-form .birth-reset{order:4!important;flex:0 0 64px!important;width:64px!important;min-width:64px!important;height:38px!important;white-space:nowrap!important;}
-        .birth-form .birth-result.birth-warning{position:static!important;display:block!important;flex:0 0 78px!important;width:78px!important;min-width:78px!important;max-width:78px!important;margin:0!important;color:#a15b4c!important;white-space:nowrap!important;overflow:visible!important;text-align:left!important;pointer-events:none!important;}
-
-        /* 운세 확인 전에는 카드 테두리와 높이는 유지하고 안의 내용만 비웁니다. */
-        .mira-pending .overview .card{visibility:visible!important;}
-        .mira-pending .overview .card>*{visibility:hidden!important;}
-        .mira-pending .overview{min-height:208px!important;}
-
-        /* 상세 운세는 긴 글도 읽기 편하도록 여백과 글자 크기를 확보합니다. */
-        .z-dialog .detail-summary{font-size:14px!important;line-height:1.9!important;}
-        .z-dialog .detail-item p{font-size:12px!important;line-height:1.75!important;}
-        .z-dialog .detail-tip{font-size:13px!important;line-height:1.8!important;}
-        @media(max-width:760px) and (hover:none) and (pointer:coarse){
-          body{min-width:0!important;overflow-x:hidden!important;}
-          .birth-box{min-height:76px!important;padding:14px!important;}
-          .birth-copy{display:none!important;}
-          .birth-form{left:10px!important;right:auto!important;width:calc(100% - 20px)!important;min-width:0!important;max-width:none!important;}
-          .birth-form .birth-result{flex-basis:72px!important;width:72px!important;min-width:72px!important;max-width:72px!important;}
-          .birth-form .birth-date-trigger{flex:1 1 auto!important;min-width:0!important;}
-          .z-dialog{padding:18px!important;max-height:calc(100vh - 24px)!important;}
-          .z-dialog h3{font-size:22px!important;}
-        }
-      `;
-      document.head.appendChild(style);
-
-      // 기존 로직이 결과 요소를 다시 옮겨도 항상 입력창 바로 왼쪽으로 되돌립니다.
-      const observer=new MutationObserver(()=>{
-        const f=document.getElementById('birthForm');
-        const r=document.getElementById('birthResult');
-        const t=f&&f.querySelector('.birth-date-trigger');
-        if(!f||!r||!t)return;
-        if(r.parentElement!==f || r.nextElementSibling!==t)f.insertBefore(r,t);
-        if(r.classList.contains('birth-warning'))r.removeAttribute('style');
-      });
-      observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style']});
-
-      setupDetailedZodiac(list);
-    };
-
-    // 띠/별자리마다 서로 다른 상세 설명을 표시합니다.
-    function setupDetailedZodiac(list){
-      if(!list)return;
-      const animals=['쥐','소','호랑이','토끼','용','뱀','말','양','원숭이','닭','개','돼지'];
-      const stars=['양자리','황소자리','쌍둥이자리','게자리','사자자리','처녀자리','천칭자리','전갈자리','사수자리','염소자리','물병자리','물고기자리'];
-      const animalIcons=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
-      const starIcons=['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'];
-      const scores=[72,76,79,83,86,89,92,74,81,87,94,78];
-      const themes=[
-        ['주변의 작은 변화보다 해야 할 일에 집중하면 흐름이 좋아집니다. 오전에는 생각이 많을 수 있지만 오후부터 점차 여유가 생겨요.','큰 지출은 한 번 더 확인하세요. 필요한 곳에만 쓰면 안정감이 생깁니다.','먼저 따뜻하게 말을 건네면 관계가 부드러워집니다.','미뤄둔 일을 순서대로 처리하면 좋은 평가를 받을 수 있어요.','피로가 쌓이지 않도록 식사와 휴식을 챙겨주세요.','오늘은 한 가지 일을 확실히 끝내는 것이 좋아요.'],
-        ['꾸준히 해오던 일이 조금씩 결과로 돌아오는 날입니다. 급하게 방향을 바꾸기보다 현재 계획을 다듬어보세요.','충동구매를 줄이고 필요한 항목을 정리해보세요. 작은 절약이 도움이 됩니다.','상대의 말을 끝까지 들어주면 관계운이 좋아집니다.','성실함이 강점으로 드러나요. 맡은 일을 정확하게 마무리하세요.','목과 어깨가 뻐근해지지 않도록 중간중간 움직여주세요.','오늘은 속도보다 꾸준함을 선택하세요.'],
-        ['새로운 제안이나 이야기가 들어올 수 있어요. 바로 결정하지 말고 조건을 확인한 뒤 움직이면 좋은 기회를 잡을 수 있습니다.','작은 수입이나 절약의 기회가 생길 수 있지만 욕심낸 투자는 피하세요.','가벼운 대화에서 관계가 가까워질 수 있어요.','아이디어를 먼저 실행하고 세부사항은 나중에 다듬어보세요.','활동량이 늘 수 있으니 수분을 충분히 챙기세요.','평소와 다른 작은 시도를 하나 해보세요.'],
-        ['혼자 모든 일을 해결하려 하지 말고 도움을 적절히 나누면 훨씬 편안합니다. 주변과의 균형이 오늘의 핵심이에요.','예상 밖의 지출을 대비해 여유 자금을 남겨두세요.','원하는 것을 돌려 말하기보다 차분하게 표현하면 오해가 줄어듭니다.','협업에서 강점이 드러나는 날입니다. 역할을 명확히 나눠보세요.','늦은 시간까지 무리하지 말고 수면 리듬을 지켜주세요.','사람과의 조화를 우선하면 일이 자연스럽게 풀립니다.'],
-        ['자신감이 올라오는 날입니다. 결과를 서두르기보다 한 단계씩 확인하면 실수를 줄일 수 있어요.','필요한 물건에 대한 소비는 괜찮지만 기분에 따른 소비는 줄이세요.','짧은 연락 하나도 좋은 분위기를 만들 수 있습니다.','발표나 제안처럼 자신을 보여주는 일에 유리합니다.','과도한 활동 뒤 피로가 몰릴 수 있으니 휴식을 잡아두세요.','자신 있게 하되 마지막 확인은 꼭 하세요.'],
-        ['복잡했던 일이 정리되기 시작합니다. 우선순위가 높은 것부터 처리하면 성취감이 커져요.','작은 금액이라도 저축이나 지출 정리에 관심을 가져보세요.','서로의 생활을 존중하면 관계가 편안해집니다.','집중력이 좋아 혼자 몰입해야 하는 업무에 적합합니다.','규칙적인 식사와 가벼운 산책이 도움이 됩니다.','정리할수록 운이 트입니다.'],
-        ['기다리던 소식이 조금 늦어질 수 있지만 전체 흐름은 안정적입니다. 다음 준비를 해두세요.','구독이나 반복 결제처럼 돈이 새는 부분을 확인해보세요.','작은 배려가 큰 호감으로 이어질 수 있어요.','기존 업무를 개선할 아이디어를 메모해두세요.','눈의 피로와 수면 부족을 조심하세요.','지금 당장 답이 없어도 준비를 멈추지 마세요.'],
-        ['갑작스러운 일정 변경에도 유연하게 대응하면 오히려 기회가 됩니다. 변화에 적응하는 힘이 좋아요.','새로운 소비보다 현재 가진 것을 활용하는 것이 유리합니다.','감정을 숨기기보다 적당히 표현하면 상대도 마음을 이해하기 쉬워요.','변경된 일정에 빠르게 적응하면 주변의 신뢰를 얻습니다.','한 자세로 오래 있지 말고 틈틈이 움직여주세요.','예상 밖의 변화도 긍정적으로 받아들여보세요.'],
-        ['말보다 행동으로 신뢰를 보여주는 것이 중요합니다. 약속한 일을 지키면 좋은 평가를 받을 수 있어요.','계획적인 소비에는 좋은 흐름이 있지만 큰 금액은 비교 후 결정하세요.','작은 약속이라도 지키는 모습이 관계를 단단하게 합니다.','책임감이 돋보이는 날입니다. 어려운 일도 끝까지 마무리하세요.','과로만 피하면 컨디션은 무난합니다.','작은 약속 하나를 확실하게 지켜보세요.'],
-        ['새로운 사람이나 정보가 오늘의 흐름을 바꿀 수 있어요. 평소 관심 없던 분야에서도 힌트를 얻습니다.','정보를 확인한 뒤 움직이면 좋은 기회를 발견할 수 있어요.','새로운 만남에서 편안한 인연이 생길 수 있습니다.','배우고 익히는 데 좋은 날입니다. 새로운 방법을 하나 시도해보세요.','머리를 많이 쓰는 만큼 휴식도 챙겨주세요.','새로운 정보를 하나 받아들이면 시야가 넓어집니다.'],
-        ['주변 상황을 객관적으로 보기 좋은 날입니다. 고민하던 문제도 다른 관점에서 답이 보일 수 있어요.','오늘은 안정이 우선입니다. 현재 지출을 관리하세요.','상대에게 공간을 주면 관계가 오히려 편안해집니다.','자료를 충분히 검토하면 좋은 결과를 얻을 수 있어요.','긴장을 풀 수 있는 조용한 시간이 필요합니다.','답을 서두르지 말고 한 번 더 생각해보세요.'],
-        ['작은 행운이 여러 번 겹칠 수 있는 날입니다. 우연히 얻은 정보나 만남도 가볍게 넘기지 마세요.','작은 이득을 챙길 기회가 있지만 욕심은 금물입니다.','즐거운 약속이나 대화가 관계에 활력을 더해줘요.','성과를 보여줄 기회가 생길 수 있으니 자료를 정리해두세요.','활동 후에는 충분한 수분과 휴식을 보충하세요.','작은 기회를 발견하면 가볍게 잡아보세요.']
-      ];
-      const $=id=>document.getElementById(id);
-      const render=(type,i)=>{
-        const d=themes[i%themes.length];
-        const names=type==='animal'?animals:stars;
-        const icons=type==='animal'?animalIcons:starIcons;
-        const score=scores[i%12];
-        const grade=score>=90?'매우 좋음':score>=84?'좋음':score>=78?'무난':'차분';
-        const money=Math.max(60,score-2+(i%8));
-        const love=Math.max(60,score-4+((i*3)%10));
-        const work=Math.max(60,score+((i*2)%7));
-        const health=Math.max(60,score-3+((i*5)%9));
-        $('zDetailIcon').textContent=icons[i];
-        $('zDetailTitle').textContent=names[i];
-        $('zDetailType').textContent=type==='animal'?'오늘의 띠별 운세':'오늘의 별자리 운세';
-        $('zDetailGrade').textContent=grade+' · '+score+'점';
-        $('zDetailSummary').textContent=d[0];
-        $('zDetailGrid').innerHTML=[['재물운',money,d[1]],['애정운',love,d[2]],['직장운',work,d[3]],['건강운',health,d[4]]].map(v=>`<div class="detail-item"><b>${v[0]}</b><strong>${v[1]}점</strong><p>${v[2]}</p></div>`).join('');
-        $('zDetailTip').textContent='오늘의 포인트 · '+d[5];
-        $('zDetail').classList.add('open');
-        document.body.style.overflow='hidden';
-      };
-      if(list.dataset.detailBound==='1')return;
-      list.dataset.detailBound='1';
-      list.addEventListener('click',e=>{
-        const card=e.target.closest('.z');
-        if(!card)return;
-        e.stopImmediatePropagation();
-        render(card.dataset.ztype,+card.dataset.zindex);
-      },true);
-      list.addEventListener('keydown',e=>{
-        const card=e.target.closest('.z');
-        if(!card || (e.key!=='Enter'&&e.key!==' '))return;
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        render(card.dataset.ztype,+card.dataset.zindex);
-      },true);
-    }
-    apply();
+    const run=()=>setTimeout(finalFix,80);
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run();
+    setTimeout(finalFix,700);
+    setTimeout(finalFix,1600);
   };
-  script.onerror=()=>console.error('Mira fortune script failed to load.');
+  script.onerror=()=>console.error('Mira fortune legacy script failed to load.');
   document.head.appendChild(script);
+
+  function finalFix(){
+    const form=document.getElementById('birthForm'),input=document.getElementById('birthYear'),result=document.getElementById('birthResult'),fortune=document.getElementById('fortune');
+    if(!form||!input||!result||!fortune)return;
+    document.querySelectorAll('.tests,[href="#tests"]').forEach(el=>el.remove());
+    if(form.dataset.miraFinal==='1'){applyBlankState(fortune);return;}
+    const fresh=form.cloneNode(true);form.replaceWith(fresh);
+    const f=document.getElementById('birthForm'),oldInput=f.querySelector('#birthYear'),r=document.getElementById('birthResult');
+    if(!oldInput||!r)return;
+    f.dataset.miraFinal='1';
+    oldInput.type='date';oldInput.removeAttribute('min');oldInput.min='1900-01-01';oldInput.max=new Date().toISOString().slice(0,10);oldInput.placeholder='생년월일';oldInput.setAttribute('aria-label','생년월일');oldInput.classList.add('mira-final-date');
+    f.insertBefore(r,oldInput);r.textContent='';r.className='birth-result';
+    let reset=f.querySelector('.birth-reset');
+    if(!reset){reset=document.createElement('button');reset.type='button';reset.className='birth-reset';reset.textContent='초기화';f.appendChild(reset);}
+    try{localStorage.removeItem('mira_birth_year')}catch(e){}
+    const saved=localStorage.getItem('mira_birth_date');if(saved&&/^\d{4}-\d{2}-\d{2}$/.test(saved)&&saved<=oldInput.max)oldInput.value=saved;
+
+    const style=document.createElement('style');style.textContent=`
+      .birth-box{position:relative!important;overflow:visible!important}.birth-form{display:grid!important;grid-template-columns:82px minmax(170px,1fr) auto 64px!important;align-items:center!important;gap:7px!important;width:min(100%,470px)!important;margin:0 0 0 auto!important}.birth-form .birth-result{grid-column:1!important;position:static!important;width:auto!important;min-width:0!important;max-width:none!important;margin:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;font-size:11px!important;font-weight:900!important;color:#5c8d71!important;text-align:left!important}.birth-form .mira-final-date{grid-column:2!important;width:100%!important;min-width:0!important;height:46px!important;box-sizing:border-box!important}.birth-form button[type="submit"]{grid-column:3!important;height:38px!important;white-space:nowrap!important}.birth-form .birth-reset{grid-column:4!important;width:64px!important;min-width:64px!important;height:38px!important;border:1px solid #d3cdbf!important;border-radius:9px!important;background:#fffdf8!important;color:#587062!important;font-size:12px!important;font-weight:900!important;cursor:pointer!important}
+      #fortune.mira-pending .overview .card>*{visibility:hidden!important}#fortune.mira-pending .four .card>*{visibility:hidden!important}#fortune.mira-pending .overview .card,#fortune.mira-pending .four .card{visibility:visible!important}#fortune.mira-pending .overview{min-height:208px!important}#fortune.mira-pending .four .fortune{min-height:91px!important}
+      @media(max-width:760px) and (hover:none) and (pointer:coarse){body{min-width:0!important;overflow-x:hidden!important}.birth-box{display:block!important;padding:14px!important;min-height:76px!important}.birth-copy{display:none!important}.birth-form{display:grid!important;grid-template-columns:72px minmax(70px,1fr) auto 60px!important;width:100%!important;max-width:none!important;margin:0!important;gap:5px!important}.birth-form .birth-result{grid-column:1!important;font-size:10px!important}.birth-form .mira-final-date{grid-column:2!important;height:38px!important;font-size:12px!important;padding:0 7px!important}.birth-form button[type="submit"]{grid-column:3!important;height:38px!important;padding:0 10px!important;font-size:11px!important}.birth-form .birth-reset{grid-column:4!important;width:60px!important;min-width:60px!important;height:38px!important;font-size:11px!important}.overview{grid-template-columns:1fr!important;gap:8px!important}.four{grid-template-columns:repeat(2,1fr)!important;gap:8px!important}}
+    `;document.head.appendChild(style);
+
+    f.addEventListener('submit',e=>{e.preventDefault();if(!oldInput.value){r.textContent='생년월일을 입력해주세요.';r.classList.add('birth-warning');return}showPersonalFortune(oldInput.value)});
+    oldInput.addEventListener('change',()=>{if(!oldInput.value){r.textContent='';return}const y=Number(oldInput.value.slice(0,4));r.classList.remove('birth-warning');r.textContent=`${y}년생 · ${animalForYear(y)}`});
+    reset.addEventListener('click',()=>{oldInput.value='';r.textContent='';r.classList.remove('birth-warning');try{localStorage.removeItem('mira_birth_date')}catch(e){}applyBlankState(fortune)});
+    applyBlankState(fortune);
+  }
+  function applyBlankState(fortune){fortune.classList.add('mira-pending');const title=document.getElementById('fortune-title');if(title)title.textContent='오늘의 운세'}
+  function animalForYear(year){const animals=['쥐','소','호랑이','토끼','용','뱀','말','양','원숭이','닭','개','돼지'];return animals[((year-2020)%12+12)%12]}
+  function showPersonalFortune(value){const p=value.split('-').map(Number),year=p[0],month=p[1],day=p[2];if(!year||!month||!day)return;const seed=year*31+month*17+day*13+new Date().getDate()*7+new Date().getMonth()*11,score=76+(Math.abs(seed)%20);const title=score>=90?'오늘은 흐름을 적극적으로 잡아보세요.':score>=84?'차분하게 움직이면 좋은 흐름이 이어져요.':'작은 선택 하나가 오늘의 분위기를 바꿔요.';const desc=score>=90?'준비해 둔 일을 실제 행동으로 옮기기 좋은 날이에요. 작은 기회라도 지나치지 말고 우선순위를 정해 움직여보세요.':score>=84?'서두르기보다 순서를 정해 움직이면 예상보다 안정적으로 일이 풀려요. 주변의 의견도 적절히 활용해보세요.':'복잡한 일을 한꺼번에 해결하려 하지 말고 눈앞의 한 가지부터 정리해보세요. 작은 진전이 다음 흐름을 만들어줍니다.';const result=document.getElementById('birthResult');result.classList.remove('birth-warning');result.textContent=`${year}년생 · ${animalForYear(year)}`;document.getElementById('fortune').classList.remove('mira-pending');const badge=document.querySelector('#fortune .badge');if(badge)badge.textContent='오늘의 흐름';const h=document.getElementById('summaryTitle');if(h)h.textContent=title;const text=document.getElementById('summaryText');if(text)text.textContent=desc;const scoreEl=document.getElementById('score');if(scoreEl)scoreEl.textContent=score;const values={money:Math.max(70,score-2),love:Math.max(68,score-4),work:Math.min(99,score+2),health:Math.max(70,score-3)};Object.keys(values).forEach(k=>{const el=document.getElementById(k);if(el)el.textContent=values[k]+'점'});const luck={luckyColor:'초록',luckyNumber:String(3+(seed%9)),luckyTime:'15:00~17:00',luckyDirection:'동쪽',luckyItem:'작은 식물'};Object.keys(luck).forEach(k=>{const el=document.getElementById(k);if(el)el.textContent=luck[k]});const texts={money:'필요한 지출과 미뤄도 되는 지출을 구분하면 안정적인 흐름을 만들 수 있어요.',love:'가까운 사람에게 먼저 마음을 표현하면 관계가 한결 부드러워져요.',work:'해야 할 일을 우선순위대로 정리하면 집중력이 살아납니다.',health:'무리해서 일정을 채우기보다 충분한 수면과 수분을 챙겨주세요.'};Object.keys(texts).forEach(k=>{const el=document.getElementById(k+'Text');if(el)el.textContent=texts[k]});try{localStorage.setItem('mira_birth_date',value)}catch(e){}}
 })();
-\n\n// MIRA_BIRTH_FORM_FIXED_LAYOUT\n(function(){\n  // 생년월일 입력창과 버튼을 고정 슬롯으로 배치해 경고문이 레이아웃을 밀지 못하게 합니다.\n  const s=document.createElement('style');\n  s.textContent=`\n  .birth-box{position:relative!important;}\n  .birth-form{position:absolute!important;right:17px!important;top:50%!important;transform:translateY(-50%)!important;width:335px!important;min-width:335px!important;max-width:335px!important;display:flex!important;flex-wrap:nowrap!important;align-items:center!important;gap:7px!important;margin:0!important;}\n  .birth-form .birth-date-trigger{flex:0 0 230px!important;width:230px!important;min-width:230px!important;}\n  .birth-form button{flex:0 0 auto!important;}\n  .birth-result{position:fixed!important;}\n  @media(max-width:760px) and (hover:none) and (pointer:coarse){\n    .birth-box{min-height:76px!important;padding:14px!important;overflow:visible!important;}\n    .birth-copy{display:none!important;}\n    .birth-form{left:14px!important;right:auto!important;top:50%!important;width:335px!important;min-width:335px!important;max-width:335px!important;transform:translateY(-50%)!important;}\n  }`;\n  document.head.appendChild(s);\n})();\n
