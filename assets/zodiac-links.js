@@ -27,12 +27,12 @@
   }
   function hideTests(){if(home())document.querySelectorAll('.tests,[href="#tests"],[href="/test/"],[href="/test"]').forEach(e=>e.remove());}
   function pending(){
-    const o=document.querySelector('.overview');if(!o)return;o.classList.remove('mira-ready');o.classList.add('mira-pending');
+    const o=document.querySelector('.overview');if(!o)return;document.body.classList.add('mira-pre-input-lock');o.classList.remove('mira-ready');o.classList.add('mira-pending');
     o.querySelectorAll('.score').forEach(el=>{el.style.setProperty('display','none','important');const value=el.querySelector('b');if(value)value.textContent='';});
     o.querySelectorAll('.four .fortune').forEach(card=>{card.querySelectorAll('strong,small,.score').forEach(el=>{el.textContent='';el.style.setProperty('display','none','important');});});
   }
   function show(year,month,day){
-    const o=document.querySelector('.overview');if(!o)return;const f=calcFortune(year,month,day);o.classList.remove('mira-pending');o.classList.add('mira-ready');
+    const o=document.querySelector('.overview');if(!o)return;const f=calcFortune(year,month,day);o.classList.remove('mira-pending');o.classList.add('mira-ready');document.body.classList.remove('mira-pre-input-lock');
     const main=o.querySelector('.main');
     if(main){const badge=main.querySelector('.badge'),h=main.querySelector('h3'),p=main.querySelector('p'),s=main.querySelector('.score b');if(badge)badge.textContent=f.level(f.scores.total);if(h)h.textContent=`${f.birthYear.stem}${f.birthYear.branch} · ${f.birthDay.stem}${f.birthDay.branch} · 오늘 ${f.today.stem}${f.today.branch}`;if(p)p.textContent=f.relation;if(s)s.textContent=f.scores.total;const score=main.querySelector('.score');if(score)score.style.removeProperty('display');}
     o.querySelectorAll('.four .fortune').forEach((c,n)=>{const scores=[f.scores.money,f.scores.love,f.scores.work,f.scores.health],texts=[f.moneyText,f.loveText,f.workText,f.healthText];if(n>3)return;c.querySelectorAll('[data-mira-fortune]').forEach(el=>el.remove());const s=document.createElement('strong');s.dataset.miraFortune='score';s.textContent=scores[n]+'점';const p=document.createElement('small');p.dataset.miraFortune='text';p.textContent=texts[n];c.appendChild(s);c.appendChild(p);});
