@@ -23,23 +23,26 @@ jobs:
           p = Path('index.html')
           html = p.read_text(encoding='utf-8')
 
-          # 홈의 띠·별자리 영역과 상세 모달을 통째로 제거한다.
-          patterns = [
-              r'<div id="zodiac"\b.*?(?=<div class="z-detail" id="zDetail")',
-              r'<div class="z-detail" id="zDetail".*?(?=<section id="tests">)',
-          ]
-          for pattern in patterns:
-              html, count = re.subn(pattern, '', html, count=1, flags=re.S)
-              if count != 1:
-                  raise SystemExit(f'pattern not found: {pattern}')
+          # 띠·별자리 영역 시작부터 상세 모달 시작 직전까지 제거한다.
+          pattern = r'<div id="zodiac" class="zodiac-box">.*?(?=<div class="z-detail" id="zDetail")'
+          html, count = re.subn(pattern, '', html, count=1, flags=re.S)
+          if count != 1:
+              raise SystemExit('zodiac box not found')
 
-          # 상단/사이드 메뉴의 띠·별자리 링크도 제거한다.
-          html = re.sub(r'<a href="#zodiac">.*?(?:띠 운세|별자리 운세|띠·별자리).*?</a>', '', html)
+          # 상세 모달부터 심리테스트 영역 시작 직전까지 제거한다.
+          pattern = r'<div class="z-detail" id="zDetail".*?(?=<section id="tests">)'
+          html, count = re.subn(pattern, '', html, count=1, flags=re.S)
+          if count != 1:
+              raise SystemExit('zodiac detail not found')
+
+          # 상단/사이드 메뉴의 띠·별자리 링크를 제거한다.
+          html = re.sub(r'<a href="#zodiac">.*?</a>', '', html)
           p.write_text(html, encoding='utf-8')
 
-          # 결과 파일에 관련 UI가 남아 있지 않은지 최종 검증한다.
+          # 실제 파일에 관련 UI가 남지 않았는지 검증한다.
           check = p.read_text(encoding='utf-8')
-          if 'id="zodiac"' in check or '띠·별자리 오늘운' in check or '12띠' in check or '12별자리' in check:
+          forbidden = ['id="zodiac"', '띠·별자리 오늘운', '12띠', '12별자리']
+          if any(x in check for x in forbidden):
               raise SystemExit('zodiac UI still remains after cleanup')
           PY
       - name: Commit and remove this workflow
