@@ -41,7 +41,7 @@
     return 2;                          // 나를 극하는 오행
   }
 
-  // 생년월일 + 오늘 날짜를 간지·오행 관계로만 계산합니다.
+  // 생년월일 + 오늘 날짜를 간지·오행으로만 계산합니다. 같은 날짜에는 같은 결과가 나옵니다.
   function calcFortune(year,month,day){
     const now=new Date();
     const birthYear=yearPillar(year);
@@ -58,7 +58,7 @@
       money:Math.max(55,Math.min(95,67+yearRelation*2+dayRelation*2+branchRelation*2)),
       love:Math.max(55,Math.min(95,69+yearRelation+dayRelation*3+branchRelation*2)),
       work:Math.max(55,Math.min(95,68+yearRelation*3+dayRelation*2+branchRelation)),
-      health:Math.max(55,Math.min(95,70+yearRelation+dayRelation*2+branchRelation*2)
+      health:Math.max(55,Math.min(95,70+yearRelation+dayRelation*2+branchRelation*2))
     };
 
     const level=s=>s>=88?'매우 좋음':s>=82?'좋음':s>=75?'무난함':'주의';
